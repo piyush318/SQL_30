@@ -1,0 +1,49 @@
+WITH k AS (
+    SELECT student_id, 'S1' AS sub, subject1 AS marks FROM student_marks
+    UNION ALL
+    SELECT student_id, 'S2' AS sub, subject2 as marks FROM student_marks
+    UNION ALL
+    SELECT student_id, 'S3' AS sub, subject3 as marks FROM student_marks
+    UNION ALL
+    SELECT student_id, 'S4' AS sub, subject4 as marks FROM student_marks
+    UNION ALL
+    SELECT student_id, 'S5' AS sub, subject5 as marks FROM student_marks
+    UNION ALL
+    SELECT student_id, 'S6' AS sub, subject6 as marks FROM student_marks
+	
+),
+x as (select * from k where marks is not null),
+y AS (
+    SELECT 
+        x.student_id,
+        s.name,
+        round(avg(cast(marks as decimal(4,2))),2) AS Percentage_marks
+    FROM 
+        x
+    INNER JOIN 
+        students AS s ON x.student_id = s.roll_no 
+    WHERE 
+        x.marks IS NOT NULL
+    GROUP BY 
+        x.student_id, s.name
+),
+z as (SELECT 
+    x.student_id,
+    STRING_AGG(subjects.name, ', ') AS Failed_Subjects
+FROM 
+    x
+INNER JOIN 
+    subjects ON x.sub = subjects.ID
+INNER JOIN 
+    y ON x.student_id = y.student_id
+WHERE 
+    x.marks < subjects.pass_marks
+GROUP BY 
+    x.student_id)
+	
+select y.student_id,y.name,Percentage_marks,Failed_Subjects, 
+case when Failed_Subjects is null and Percentage_marks >= 70 then 'First Class'
+	 when Failed_Subjects is null and Percentage_marks >= 50 then 'Second Class' 
+	 when Failed_Subjects is null and Percentage_marks <= 50 then 'Third Class'  else 'Fail' end  as Result from y
+left join z
+on y.student_id = z.student_id;
